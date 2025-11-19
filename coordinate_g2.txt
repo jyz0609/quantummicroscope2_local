@@ -1,0 +1,12 @@
+K:/Microscope/Data/251028/chip1025_flake_b_date(251028)_time(16h21m34s)_scantime(50.0)_dwellTime(0.005)_xAmp(0.15974)_yAmp(0.15974)_xyDim(100).timeres
+Recorded at 2025-11-05 17:36:06 | Version: 1.0
+6,42
+51,75
+23,88
+2,46
+28,28
+27,39
+30,80
+50,91
+45,92
+25,31

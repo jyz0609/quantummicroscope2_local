@@ -1,0 +1,16 @@
+        return frm_stepsize
+    def write_g2_coordinate_widget(self, tab):
+        frm_g2coord = ttk.Frame(tab, relief=tk.RAISED)
+        def write_single():
+            g2_coord.write_single_coordinate(x=self.x_move_var.get(),y=self.y_move_var.get(), timeresfile= self.anal_data_file.get())
+
+        ttk.Button(frm_g2coord, text=f'single coord record', command= write_single).grid(row=0, column=0,
+                                                                                               columnspan=2,
+                                                                                               sticky="ew")
+        ttk.Button(frm_g2coord, text=f'clear coord file', command= g2_coord.clear_coord_file).grid(row=0, column=1,
+                                                                                               columnspan=2,
+                                                                                               sticky="ew")
+        return frm_g2coord
+
+
+self.logger_box.module_logger.info(f"Loading image: {file}")

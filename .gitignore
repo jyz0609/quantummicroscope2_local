@@ -1,0 +1,10 @@
+ECHO is on.
+
+
+Analysis/
+__pycache__/*
+nonspeedmatrix.txt
+filtered_image.png
+Calibration_moves.txt
+1023test.txt
+.idea/*
