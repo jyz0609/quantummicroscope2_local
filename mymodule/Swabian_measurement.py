@@ -5,6 +5,12 @@ import numpy
 import TimeTagger
 import etabackend.eta as eta  # Available at: https://github.com/timetag/ETA, https://eta.readthedocs.io/en/latest/
 import etabackend.tk as etatk
+# file: test_live_plot.py
+import matplotlib
+# 如果你怀疑后端有问题，可以强制用 TkAgg（GUI 后端）
+matplotlib.use("TKAgg")
+import matplotlib.pyplot as plt
+
 
 class run_swabian:
     #This function defines the filepath when create the object
@@ -35,6 +41,7 @@ class run_swabian:
         self.dump = TimeTagger.Dump(tagger=self.tagger, filename=self.timeres_file, max_tags=-1,
                                     channels=self.chan_list)
         # creat the dump object to record data
+        self.dump.stop()
         self.dump.start()
 
     def stop_dump(self):
@@ -71,6 +78,39 @@ class run_swabian:
         # 1103: do not know if it will work when multiple countrate is called. maybe use total count to see.
         print(f"first channel countrate =  {first}, second channel countrate = {second}")
         return first , second
+    def correlation_realtime(self,measuringtime = 10,channels = None):
+        if channels is None:
+            channels = [2, 3]
+        correlation = TimeTagger.Correlation(tagger = self.tagger,
+        channel_1 = channels[0],
+        channel_2 = channels[1],
+        binwidth = 200,
+        n_bins = 200)
+        correlation.stop()
+        correlation.startFor(int(measuringtime*1E12))
+
+        plt.ion()
+
+        fig, ax = plt.subplots()
+        ax.set_xlabel("Time difference (ns)")
+        ax.set_ylabel("Counts")
+
+        # 只要外部还在跑，就持续刷新
+        while correlation.isRunning():
+            x = correlation.getIndex()/int(1000)
+            y = correlation.getData()
+
+            ax.clear()
+            ax.plot(x, y)
+            ax.set_xlabel("Time difference (ns)")
+            ax.set_ylabel(f"Counts")
+            fig.canvas.draw_idle()
+            plt.pause(0.5)  # 让图窗有时间响应 & 刷新
+        plt.ioff()
+        plt.close(fig)
+
+
+
 
 
 

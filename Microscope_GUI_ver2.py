@@ -248,6 +248,7 @@ class ScanTab:
         self.find_peak_number = tk.IntVar(value=10)
         self.g2_doublecheck = tk.IntVar(value=0)
         self.g2_doublecheckbool = tk.BooleanVar()
+        self.average_count_per_bin = tk.IntVar(value=3)
 
         self.data_folder = tk.StringVar(value=f'K:/Microscope/Data/{date.today().strftime("%y%m%d")}')
         self.data_file = tk.StringVar(value='')
@@ -1635,7 +1636,7 @@ class ScanTab:
                 for x, y in coords:
                     self.t7.move_to_pos(x_coord=int(y), y_coord=int(x))
                     coord_timeres_file = os.path.join(timeres_folder,f"({x},{y}).timeres")
-                    prob = measure_save_classify(timeres_file=coord_timeres_file,timetagger=swabian,N=3)
+                    prob = measure_save_classify(timeres_file=coord_timeres_file,timetagger=swabian,N=self.average_count_per_bin.get())
                     if prob < 0.5:
                         SPEs.append([x,y])
 
@@ -1644,6 +1645,7 @@ class ScanTab:
                 swabian.free()
             else:
                 print(f"checkbox not enabled! will not perform multiple measurements")
+                self.logger_box.module_logger.info(f"checkbox not enabled! will not perform multiple measurements")
         def g2_measurement_one():
             self.suggest_name()
 
@@ -1706,16 +1708,72 @@ class ScanTab:
                 timeres_folder = os.path.splitext(self.anal_data_file.get())[0]
                 os.makedirs(timeres_folder, exist_ok=True)
                 coord_timeres_file = os.path.join(timeres_folder, f"({self.x_move_var.get()},{self.y_move_var.get()}).timeres")
-                prob = measure_save_classify(timeres_file=coord_timeres_file, timetagger=swabian, N=3)
 
 
-        ttk.Label(frm_ratio, text=f'set ratio plot(test, can only plot last analyzed file)').grid(row=0, column=0, columnspan=2, sticky="ew")
-        heatmap_ratio = ttk.Entry(frm_ratio, textvariable=self.heatmapratio, width=10)
-        heatmap_ratio.grid(row=1, column=0, sticky="ew", padx=1, pady=1)
-        heatmap_plot = ttk.Button(frm_ratio, text="ratio plot", command = ratio_plot , state= 'disabled')
-        heatmap_plot.grid(row=1, column=1, sticky="ew", padx=1, pady=1)
+                # start a timetagger
+                swabian = mymodule.Swabian_measurement.run_swabian()
+                swabian.connect()
+
+                #start a threading to do measuement and save and classify
+                t = threading.Thread(
+                    target=measure_save_classify,
+                    kwargs={
+                        "timeres_file": coord_timeres_file,
+                        "timetagger": swabian,
+                        "N": self.average_count_per_bin.get(),
+                        "bins": 100,
+                        "binsize": 200,
+                    },
+                    daemon=True,  # 主程序退出时，这个线程会自动结束
+                )
+                t.start()
 
 
+                #real time correlation measurement
+                r1, r2 = swabian.get_countrate()
+                measuringtime = self.average_count_per_bin.get() / (r1 * r2 * 200 * (1e-12))
+                swabian.correlation_realtime(measuringtime=measuringtime)
+
+                prob = measure_save_classify(timeres_file=coord_timeres_file, timetagger=swabian, N=self.average_count_per_bin.get())
+                #if prob < 0.5:
+                #    coord_json_path = os.path.join(timeres_folder, "coordinates.json")
+                #    with open(coord_json_path, "r") as f:
+                #        json_data = json.load(f)
+                #    SPEs = json_data.get("SPEs")
+                #    SPEs.append([self.x_move_var.get(),self.y_move_var.get()])
+#
+                #    def save_SPEs(filepath, coords):
+                #        # Load existing file if it exists
+                #        if os.path.exists(filepath):
+                #            try:
+                #                with open(filepath, "r") as f:
+                #                    data = json.load(f)
+                #            except json.JSONDecodeError:
+                #                data = {}  # corrupted → start fresh
+                #        else:
+                #            data = {}
+#
+                #        # Replace (or add) the key
+                #        data["SPEs"] = coords
+#
+                #        # Save result
+                #        with open(filepath, "w") as f:
+                #            json.dump(data, f, indent=4)
+#
+                #        print("Saved/updated SPEs in", filepath)
+#
+                #    save_SPEs(filepath=coord_json_path, coords=SPEs)
+                #    print(f'the cist of SPEs judged by the classifier: {SPEs}')
+                swabian.free()
+
+
+        #ttk.Label(frm_ratio, text=f'set ratio plot(test, can only plot last analyzed file)').grid(row=0, column=0, columnspan=2, sticky="ew")
+        #heatmap_ratio = ttk.Entry(frm_ratio, textvariable=self.heatmapratio, width=10)
+        #heatmap_ratio.grid(row=1, column=0, sticky="ew", padx=1, pady=1)
+        #heatmap_plot = ttk.Button(frm_ratio, text="ratio plot", command = ratio_plot , state= 'disabled')
+        #heatmap_plot.grid(row=1, column=1, sticky="ew", padx=1, pady=1)
+
+        ttk.Label(frm_ratio, text='Multi Peaks Measurement', font=('', 15)).grid(row=0, column=0, sticky="ew", padx=1, pady=0)
         ttk.Entry(frm_ratio, textvariable=self.find_peak_number, width=10).grid(row=2, column=0,columnspan=2, sticky="ew")
 
 
@@ -1725,29 +1783,31 @@ class ScanTab:
         #ttk.Label(frm_ratio, text='if checked, will perform multipeaks').grid(row=3, column=0, sticky="ew", padx=1, pady=1)
         #g2_doublecheck_entry = ttk.Entry(frm_ratio, textvariable=self.g2_doublecheck, width=10)
         #g2_doublecheck_entry.grid(row=3, column=1, sticky="ew", padx=1, pady=1)
-        g2_checkbox = tk.Checkbutton(frm_ratio, text="Enable g2 multiple peaks", variable=self.g2_doublecheckbool, width=10)
-        g2_checkbox.grid(row=3, column=1, sticky="ew", padx=1, pady=1)
+        ttk.Label(frm_ratio, text="average count per bin",width=5).grid(row=3, column=0, sticky="ew", padx=1, pady=0)
+        ttk.Entry(frm_ratio,textvariable=self.average_count_per_bin,width=5).grid(row=3, column=1, sticky="ew", padx=1, pady=1)
+        g2_checkbox = tk.Checkbutton(frm_ratio, text="Enable g2 multiple peaks", variable=self.g2_doublecheckbool, width=5)
+        g2_checkbox.grid(row=4, column=0, sticky="ew", padx=1, pady=1)
         g2_measurement_button = ttk.Button(frm_ratio, text="g2_measurement_peaks", command = g2_measurement_peaks_ver2 )
-        g2_measurement_button.grid(row=3, column=2, sticky="ew", padx=1, pady=1)
+        g2_measurement_button.grid(row=4, column=1, sticky="ew", padx=1, pady=1)
 
 
 
-        ttk.Label(frm_ratio, text='g2 measuring time for each point').grid(row=4, column=0, sticky="ew", padx=1, pady=1)
+        ttk.Label(frm_ratio, text='g2 measuring time for each point').grid(row=5, column=0, sticky="ew", padx=1, pady=1)
         g2_measurement_time = ttk.Entry(frm_ratio, textvariable=self.g2measuringtime, width=10)
-        g2_measurement_time.grid(row=4, column=1, sticky="ew", padx=1, pady=1)
-        g2_measurement_one_button = ttk.Button(frm_ratio, text="g2_measurement(onepeak)", command=g2_measurement_one)
-        g2_measurement_one_button.grid(row=4, column=2, sticky="ew", padx=1, pady=1)
+        g2_measurement_time.grid(row=5, column=1, sticky="ew", padx=1, pady=1)
+        g2_measurement_one_button = ttk.Button(frm_ratio, text="g2_measurement(onepeak)", command=g2_measurement_one_ver2)
+        g2_measurement_one_button.grid(row=5, column=2, sticky="ew", padx=1, pady=1)
 
         # Calibration scan checkbox
-        ttk.Label(frm_ratio, text='Time between calibrations').grid(row=5, column=0, sticky="ew", padx=1, pady=1)
+        ttk.Label(frm_ratio, text='Time between calibrations').grid(row=6, column=0, sticky="ew", padx=1, pady=1)
         time_between_calibration = ttk.Entry(frm_ratio, textvariable=self.calibration_interval_time, width=10)
-        time_between_calibration.grid(row=5, column=1, sticky="ew", padx=1, pady=1)
+        time_between_calibration.grid(row=6, column=1, sticky="ew", padx=1, pady=1)
         calibration_checkbutton = ttk.Checkbutton(frm_ratio, text="Do calibration scans", variable=self.do_calibration)
-        calibration_checkbutton.grid(row=5, column=2, sticky="ew", padx=1, pady=1)
+        calibration_checkbutton.grid(row=6, column=2, sticky="ew", padx=1, pady=1)
 
         # Calibration scan testbutton TODO FIXME remove after testing
         test_button = ttk.Button(frm_ratio, text="Run calibration test (remove this after test)", command=self.calibration)
-        test_button.grid(row=6, column=2, sticky="ew", padx=1, pady=1)
+        test_button.grid(row=7, column=2, sticky="ew", padx=1, pady=1)
         
         def read_voltage():
             x_volt, y_volt = self.t7.read_voltage()
@@ -1766,10 +1826,10 @@ class ScanTab:
                 self.logger_box.module_logger.info("Unlocked center voltage.")
 
         test_button_2 = ttk.Button(frm_ratio, text="Read voltage", command=read_voltage)
-        test_button_2.grid(row=6, column=1, sticky="ew", padx=1, pady=1)
+        test_button_2.grid(row=7, column=1, sticky="ew", padx=1, pady=1)
 
         lock_center_button = ttk.Button(frm_ratio, text="Lock center", command=lock_center)
-        lock_center_button.grid(row=6, column=0, sticky="ew", padx=1, pady=1)
+        lock_center_button.grid(row=7, column=0, sticky="ew", padx=1, pady=1)
 
         return frm_ratio
 
@@ -2686,6 +2746,7 @@ class T7:
         #self.x_offset = 0
         #self.y_offset = 0
 
+
     def read_voltage(self):
         """
             Read the voltages corresponding to the x and y position of the galvos.
@@ -2731,6 +2792,7 @@ class T7:
             y_pos = y_vals[y_coord]
 
             self.logger_box.module_logger.info(f"Chosen voltages: ({x_pos}, {y_pos}) at pixel ({x_coord}, {y_coord})")
+            print("Chosen voltages: ({x_pos}, {y_pos}) at pixel ({x_coord}, {y_coord})")
 
         except:
             self.logger_box.module_logger.info("Error getting move vars")
@@ -3017,9 +3079,9 @@ class T7:
                     self.logger_box.module_logger.info("Opening labjack connection")
                     self.open_labjack_connection()  # NOTE ONLINE ONLY
 
-                if self.recordScan and not self.offline:
-                    self.logger_box.module_logger.info("Creating socket connection with Qutag server.")
-                    self.socket_connection()
+                #if self.recordScan and not self.offline:
+                #    self.logger_box.module_logger.info("Creating socket connection with Qutag server.")
+                #    self.socket_connection()
             except:
                 print("FAILED CONNECTION (labjack or socket server)")
                 self.close_labjack_connection()
@@ -3159,6 +3221,12 @@ class T7:
             if self.abort_scan:
                 return
             # ---- DO SCAN -----
+            if not self.offline:
+                #Nov 19th 2025: create a timetagger object and start dumping
+                timetagger =  mymodule.Swabian_measurement.run_swabian(filepath=self.filename)
+                timetagger.start_dump()
+
+
             self.logger_box.module_logger.info(f"Starting {self.speed_mode} scan")
             self.gui.root.update()
             time.sleep(5)   # 250807: this should be the waiting time?
@@ -3218,11 +3286,13 @@ class T7:
             if not self.offline:   #****
                 # ----- reset galvo positions to offset:
                 self.set_offset_pos()
+                timetagger.stop_dump()
+                timetagger.free()
 
                 # ---- Tells server that we are done scanning
-                print("Stopping server")
+                #print("Stopping server")
 
-                self.socket_connection(doneScan=True)
+                #self.socket_connection(doneScan=True)
                 #time.sleep(1)
 
         def add_wait_delay_si(delay_s):
@@ -3313,10 +3383,12 @@ class T7:
 
         print("IN IMPROVED SLOW MODE")
         # 1) Initialize scan params
-        init_si()
+        init_si()  #it will get scan parameters,especially filename
         # 2) Connect to LJ and server
-        if do_scan:
-            connect_si()
+        #if do_scan:
+        #    connect_si()
+        # Nov 19th 2025: now locally connect to timetagger
+
         # 3)
         try:
             # CREATE DATA TO USE
@@ -4022,9 +4094,7 @@ class T7:
 
             self.gui.root.update()
             #windowgui.root.after(int(1 * 1000), windowgui.sleep)
-            self.socket_connection(doneScan=True)
-
-            time.sleep(2)
+            #self.socket_connection(doneScan=True)
 
             # reset trigger and galvo positions to offset:
             rc = ljm.eWriteName(self.handle, self.tr_source_addr, 0)  # send 0 just in case to stop any input
@@ -4076,8 +4146,8 @@ class T7:
             else:
                 self.print_log(f"Problem closing T7 device. Error = {err}", printlog)
 
-        if closeserver:
-            self.socket_connection(shutdown_server=True)
+        #if closeserver:
+        #    self.socket_connection(shutdown_server=True)
 
 class SafetyTests:
     def __init__(self, gui, t7):
