@@ -310,6 +310,7 @@ class ScanTab:
         self.set_scope_length_widget(live_tab_1).grid(row=12, column=0, columnspan=2, sticky="news", padx=2, pady=0)
         self.set_stepsize_widget(live_tab_1).grid(row=13, column=0, columnspan=2, sticky="news", padx=2, pady=0)
         self.heatmap_ratio_widget(live_tab_1).grid(row=14, column=0, columnspan=2, sticky="news", padx=2, pady=0)
+        self.long_measurement_widget(live_tab_1).grid(row=15, column=0, columnspan=2, sticky="news", padx=2, pady=0)
 
         self.g2_fig_widget(live_tab_4).grid(row=0, column=0, sticky="news", padx=2, pady=0)
         # Logged information:
@@ -1790,25 +1791,32 @@ class ScanTab:
         g2_measurement_button = ttk.Button(frm_ratio, text="g2_measurement_peaks", command = g2_measurement_peaks_ver2 )
         g2_measurement_button.grid(row=4, column=1, sticky="ew", padx=1, pady=1)
 
-
-
-        ttk.Label(frm_ratio, text='g2 measuring time for each point').grid(row=5, column=0, sticky="ew", padx=1, pady=1)
-        g2_measurement_time = ttk.Entry(frm_ratio, textvariable=self.g2measuringtime, width=10)
-        g2_measurement_time.grid(row=5, column=1, sticky="ew", padx=1, pady=1)
         g2_measurement_one_button = ttk.Button(frm_ratio, text="g2_measurement(onepeak)", command=g2_measurement_one_ver2)
-        g2_measurement_one_button.grid(row=5, column=2, sticky="ew", padx=1, pady=1)
+        g2_measurement_one_button.grid(row=4, column=2, sticky="ew", padx=1, pady=1)
+
+        return frm_ratio
+
+
+    def long_measurement_widget(self, tab):
+        frm_long = ttk.Frame(tab, relief=tk.RAISED)
+        ttk.Label(frm_long, text='Multi Peaks Measurement', font=('', 15)).grid(row=4, column=0, sticky="ew", padx=1,
+                                                                                 pady=0)
+        ttk.Label(frm_long, text='long measurement total time').grid(row=5, column=0, sticky="ew", padx=1, pady=1)
+        g2_measurement_time = ttk.Entry(frm_long, textvariable=self.g2measuringtime, width=10)
+        g2_measurement_time.grid(row=5, column=1, sticky="ew", padx=1, pady=1)
+
 
         # Calibration scan checkbox
-        ttk.Label(frm_ratio, text='Time between calibrations').grid(row=6, column=0, sticky="ew", padx=1, pady=1)
-        time_between_calibration = ttk.Entry(frm_ratio, textvariable=self.calibration_interval_time, width=10)
+        ttk.Label(frm_long, text='Time between calibrations').grid(row=6, column=0, sticky="ew", padx=1, pady=1)
+        time_between_calibration = ttk.Entry(frm_long, textvariable=self.calibration_interval_time, width=10)
         time_between_calibration.grid(row=6, column=1, sticky="ew", padx=1, pady=1)
-        calibration_checkbutton = ttk.Checkbutton(frm_ratio, text="Do calibration scans", variable=self.do_calibration)
+        calibration_checkbutton = ttk.Checkbutton(frm_long, text="Do calibration scans", variable=self.do_calibration)
         calibration_checkbutton.grid(row=6, column=2, sticky="ew", padx=1, pady=1)
 
         # Calibration scan testbutton TODO FIXME remove after testing
-        test_button = ttk.Button(frm_ratio, text="Run calibration test (remove this after test)", command=self.calibration)
+        test_button = ttk.Button(frm_long, text="Run calibration test (remove this after test)", command=self.calibration)
         test_button.grid(row=7, column=2, sticky="ew", padx=1, pady=1)
-        
+
         def read_voltage():
             x_volt, y_volt = self.t7.read_voltage()
             self.logger_box.module_logger.info("Read voltage as x:" + str(x_volt) + " y:" + str(y_volt))
@@ -1825,13 +1833,13 @@ class ScanTab:
                 self.lock_center = False
                 self.logger_box.module_logger.info("Unlocked center voltage.")
 
-        test_button_2 = ttk.Button(frm_ratio, text="Read voltage", command=read_voltage)
+        test_button_2 = ttk.Button(frm_long, text="Read voltage", command=read_voltage)
         test_button_2.grid(row=7, column=1, sticky="ew", padx=1, pady=1)
 
-        lock_center_button = ttk.Button(frm_ratio, text="Lock center", command=lock_center)
+        lock_center_button = ttk.Button(frm_long, text="Lock center", command=lock_center)
         lock_center_button.grid(row=7, column=0, sticky="ew", padx=1, pady=1)
 
-        return frm_ratio
+        return frm_long
 
     def g2_fig_widget(self,tab):
         self.g2_fig_frame = ttk.Frame(tab)
