@@ -4,7 +4,7 @@ from scipy.optimize import curve_fit
 from scipy.ndimage import convolve
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
-import cv2
+#import cv2
 
 def find_peak(matrix, sigma = 5, method="maximum_gauss", show_map = False):
     """

@@ -8,7 +8,7 @@ from labjack import ljm   # NOTE: MUST COMMENT BACK IN LAB
 import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename, askdirectory
-from ttkthemes import ThemedTk  # NOTE FIGURE OUT
+#from ttkthemes import ThemedTk  # NOTE FIGURE OUT
 
 import time
 #import serial

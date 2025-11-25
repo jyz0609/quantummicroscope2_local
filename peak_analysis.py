@@ -3,7 +3,7 @@ from scipy.ndimage import label, find_objects, maximum_filter
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import math
-import cv2
+#import cv2
 import os
 import json
 
