@@ -17,7 +17,7 @@ class run_swabian:
     def __init__(self,filepath=""):
         import os
         self.absolute_folder = os.path.dirname(os.path.abspath(__file__))
-        print(f"self absolute path = {self.absolute_folder}")
+        #print(f"self absolute path = {self.absolute_folder}")
         if filepath == "":
             filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),"test.timeres")
             print(f"get no filepath! save it as test.timeres")
@@ -25,6 +25,7 @@ class run_swabian:
         if not os.path.exists(os.path.dirname(filepath)):
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
         self.tagger=None
+        self.signal_channel_list = [2,3]
 
     def connect(self):
         self.tagger = TimeTagger.createTimeTagger()
@@ -39,7 +40,7 @@ class run_swabian:
         # set the trigger level of the marker channel. The current marker channel is 4, but this can be changed if the recipe is modified accordingly
     def start_dump(self):
         self.dump = TimeTagger.Dump(tagger=self.tagger, filename=self.timeres_file, max_tags=-1,
-                                    channels=self.chan_list)
+                                    channels=self.signal_channel_list)
         # creat the dump object to record data
         self.dump.stop()
         self.dump.start()

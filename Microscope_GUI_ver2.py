@@ -3233,7 +3233,10 @@ class T7:
             # ---- DO SCAN -----
             if not self.offline:
                 #Nov 19th 2025: create a timetagger object and start dumping
-                timetagger =  mymodule.Swabian_measurement.run_swabian(filepath=self.filename)
+
+                print(f"test 251125 the filemane is : {self.anal_filename}")
+                timetagger =  mymodule.Swabian_measurement.run_swabian(filepath=self.anal_filename)
+                timetagger.connect()
                 timetagger.start_dump()
 
 
@@ -3395,8 +3398,8 @@ class T7:
         # 1) Initialize scan params
         init_si()  #it will get scan parameters,especially filename
         # 2) Connect to LJ and server
-        #if do_scan:
-        #    connect_si()
+        if do_scan:
+            connect_si()
         # Nov 19th 2025: now locally connect to timetagger
 
         # 3)
@@ -3430,8 +3433,9 @@ class T7:
                 #return False
 
             if do_scan:
-                # INITALIZING START POSITIONS
-                start_pos_si()
+                # INITALIZING START POSITIONS why this exist? modified Nov 25th, 2025
+                #start_pos_si()
+
 
                 # DO SCAN
                 do_scan_si()
@@ -3456,6 +3460,7 @@ class T7:
 
         self.speed_mode = self.gui.speed_mode.get()  # 'fast' or 'slow'
         self.filename = self.gui.data_file.get()  # self.scanVariables.filename
+        self.anal_filename = self.gui.anal_data_file.get()
         self.num_frames = self.gui.nr_frames.get()  # self.scanVariables.num_frames  # NOTE: NEW PARAM # how many frames/images we want to scan
         self.step_amp = self.gui.ampY.get()  # self.scanVariables.step_voltage  # voltage = angle*0.22
         self.step_dim = self.gui.dimY.get()  # self.scanVariables.step_dim
