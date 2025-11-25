@@ -1799,7 +1799,9 @@ class ScanTab:
 
     def long_measurement_widget(self, tab):
         frm_long = ttk.Frame(tab, relief=tk.RAISED)
-        ttk.Label(frm_long, text='Multi Peaks Measurement', font=('', 15)).grid(row=4, column=0, sticky="ew", padx=1,
+        ttk.Label(frm_long, text='Multi Peaks Measurement', font=('', 15)).grid(row=4
+
+                                                                                , column=0, sticky="ew", padx=1,
                                                                                  pady=0)
         ttk.Label(frm_long, text='long measurement total time').grid(row=5, column=0, sticky="ew", padx=1, pady=1)
         g2_measurement_time = ttk.Entry(frm_long, textvariable=self.g2measuringtime, width=10)
