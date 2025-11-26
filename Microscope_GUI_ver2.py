@@ -1735,7 +1735,7 @@ class ScanTab:
                 measuringtime = self.average_count_per_bin.get() / (r1 * r2 * 200 * (1e-12))
                 swabian.correlation_realtime(measuringtime=measuringtime)
 
-                prob = measure_save_classify(timeres_file=coord_timeres_file, timetagger=swabian, N=self.average_count_per_bin.get())
+                #prob = measure_save_classify(timeres_file=coord_timeres_file, timetagger=swabian, N=self.average_count_per_bin.get())
                 #if prob < 0.5:
                 #    coord_json_path = os.path.join(timeres_folder, "coordinates.json")
                 #    with open(coord_json_path, "r") as f:
@@ -1766,6 +1766,7 @@ class ScanTab:
                 #    save_SPEs(filepath=coord_json_path, coords=SPEs)
                 #    print(f'the cist of SPEs judged by the classifier: {SPEs}')
                 swabian.free()
+            background_dump()
 
 
         #ttk.Label(frm_ratio, text=f'set ratio plot(test, can only plot last analyzed file)').grid(row=0, column=0, columnspan=2, sticky="ew")
@@ -1799,7 +1800,7 @@ class ScanTab:
 
     def long_measurement_widget(self, tab):
         frm_long = ttk.Frame(tab, relief=tk.RAISED)
-        ttk.Label(frm_long, text='Multi Peaks Measurement', font=('', 15)).grid(row=4
+        ttk.Label(frm_long, text='Long Measurement', font=('', 15)).grid(row=4
 
                                                                                 , column=0, sticky="ew", padx=1,
                                                                                  pady=0)

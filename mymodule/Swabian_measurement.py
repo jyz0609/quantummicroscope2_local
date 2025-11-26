@@ -20,17 +20,19 @@ class run_swabian:
         #print(f"self absolute path = {self.absolute_folder}")
         if filepath == "":
             filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),"test.timeres")
-            print(f"get no filepath! save it as test.timeres")
+            print(f"no filepath yet. if not updated, will save it as test.timeres")
         self.timeres_file = filepath
         if not os.path.exists(os.path.dirname(filepath)):
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
         self.tagger=None
-        self.signal_channel_list = [2,3]
+        self.channel_list = [1,2,3,4]
 
     def connect(self):
         self.tagger = TimeTagger.createTimeTagger()
         # create the timetagger object
         self.chan_list = self.tagger.getChannelList(TimeTagger.TT_CHANNEL_RISING_EDGES)
+        self.chan_list = list(self.channel_list)
+        print(f"self channel list is {self.chan_list}")
         # get all the available channels from the list
         for ch in self.chan_list:
             self.tagger.setTriggerLevel(ch, 0.125)
@@ -40,7 +42,7 @@ class run_swabian:
         # set the trigger level of the marker channel. The current marker channel is 4, but this can be changed if the recipe is modified accordingly
     def start_dump(self):
         self.dump = TimeTagger.Dump(tagger=self.tagger, filename=self.timeres_file, max_tags=-1,
-                                    channels=self.signal_channel_list)
+                                    channels=self.channel_list)
         # creat the dump object to record data
         self.dump.stop()
         self.dump.start()
@@ -68,9 +70,9 @@ class run_swabian:
             channels = [2, 3]
         print("waiting 2s for stable count")
         time.sleep(2)
-        print("getting count rate")
+        print("getting count rate for 5s")
         counter = TimeTagger.Countrate(self.tagger, channels)
-        time.sleep(3)
+        time.sleep(5)
         countratearr = counter.getData()
         first = round(float(countratearr[0]), 4)
         second = round(float(countratearr[1]), 4)

@@ -60,7 +60,7 @@ def second_correlation(timetag_file, eta_engine, bins=50, binsize=200,measuringt
     print(f"size of his2 is {hist2.shape}")
     print(f"cion at binsize {binsize} is: {coin}")
     normalize_coefficient = (int(i3) * int(i4) * binsize * (1e-12) / measuringtime)
-    normalized_g2 = (hist1+hist2)/(2*normalize_coefficient)
+    normalized_g2 = (coin)/(2*normalize_coefficient)
     g2_onedirection = g2_onedirection / (2*normalize_coefficient)
 
     return coin,normalized_g2, delta_t,i3,i4,g2_onedirection

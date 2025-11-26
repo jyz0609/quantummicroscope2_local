@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="css/code.css">
+    <link rel="stylesheet" type="text/css" href="css/frame.css">
+    <link rel="stylesheet" type="text/css" href="css/layout.css">
+    <link rel="stylesheet" type="text/css" href="css/design.css">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <script>
+        if (typeof module === 'object') {
+            window.module = module;
+            module = undefined;
+        }
+    </script>
+    
+    <script src='js/lib/jquery.min.js'></script>
+    <!-- Helper libraries -->
+    <script src="js/lib/bootstrap.min.js"></script>
+    
+    <!-- SaveAs -->
+    <script src="js/lib/Blob.js"></script>
+    <script src="js/lib/FileSaver.min.js"></script>
+      <!-- Helper libraries -->
+      <script src="js/lib/d3.min.js"></script>
+      
+    <!-- Resize detection -->
+    <script src="js/lib/ResizeSensor/ResizeSensor.js"></script>
+    <script src="js/lib/ResizeSensor/ElementQueries.js"></script>
+    <!-- Local storage -->
+	 <script src="js/jsondrop.js"></script>
+    <script src="js/lib/jstorage.js"></script>
+    <script src="js/helper.js"></script>
+   
+  
+    <!-- jas.editor -->
+    <script src="js/jas.editor.js"></script>
+    <script src="js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/ace/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/ace/mode-python.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/ace/snippets/python.js" type="text/javascript" charset="utf-8"></script>
+    <!-- Layout system -->
+	<script type="text/javascript" src="js/lib/jquery-ui-latest.js"></script>
+	<script type="text/javascript" src="js/lib/jquery.layout-1.3.0.rc30.80.js"></script>
+    
+    <script>
+        if (window.module) module = window.module;
+    </script>
+    <title>Instrument Designer</title>
+
+	
+</head>
+<body id="body">
+    <script type="text/javascript" src="js/layout.js"></script>
+
+    <!-- manually attach allowOverflow method to pane -->
+
+    <div class="ui-layout-north" >
+        <div id="top_panel" >
+            <span class="caption" id="main_caption">Instrument Designer</span>
+            <a href="#" class="menu-link" id="btn_create">Create</a>
+            <!--a href="#" class="menu-link" id="btn_save">Save as Image</a-->
+            <a href="#" class="menu-link" id="btn_undo">Undo</a>
+            <a href="#" class="menu-link" id="btn_redo">Redo</a>
+            <a href="#" class="menu-link" id="btn_load_json">Load</a>
+            <a href="#" class="menu-link" id="btn_save_json">Export</a>
+            <a href="help.html" class="menu-link"  target="_blank" >Help</a>
+            
+            <a href="#" class="menu-link" id="btn_save_localstorage">Exit</a>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="js/design.js"></script>
+
+
+    <div class="ui-layout-east">
+        <pre id="acecode"></pre>
+    </div>
+
+    <div class="ui-layout-center"  id="svg_container">
+
+    </div>
+
+    <div class="modal fade" id="rfileModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create RFILE</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="needs-validation" novalidate id="rfile_table">
+                    <div class="modal-body">
+                        <label for="rfile1">Name</label>
+                        <input type="text" class="form-control" id="rfile1" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid value.
+                        </div>
+                        <small class="form-text text-muted">The name of RFILE should match the keys in the sources dict.</small>
+                        <label for="rfile2">Signal Channels</label>
+                        <input type="text" class="form-control" id="rfile2" value="[0,1,2,3]" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid value.
+                        </div>
+                        <label for="rfile3">Marker Channels</label>
+                        <input type="text" class="form-control" id="rfile3" value="[]"  required>
+                        <div class="invalid-feedback">
+                            Please provide a valid value.
+                        </div>
+                        <small class="form-text text-muted">Specify the channel number for mapping form file. Refer to the mannual for details.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-outline-dark" id="rfile_create">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="histogramModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create 1-D Histogram</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="needs-validation" novalidate id="histogram_table">
+                    <div class="modal-body">
+                        <label for="hist1">Histogram Name</label>
+                        <input type="text" class="form-control" id="hist1" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid name.
+                        </div>
+                        <label for="hist2">Number of bins</label>
+                        <input type="number" class="form-control" id="hist2" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid value.
+                        </div>
+                        <label for="hist3">Width (in ps) of bins</label>
+                        <input type="number" class="form-control" id="hist3" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid value.
+                        </div>
+                        <small  class="form-text text-muted">For higher dimensional histograms, plese refer to the mannual.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-outline-dark" id="histogram_create">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="integerModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Integer</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="needs-validation" novalidate id="integer_table">
+                    <div class="modal-body">
+                        <label for="integer1">Name</label>
+                        <input type="text" class="form-control" id="integer1" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid value.
+                        </div>
+                      
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-outline-dark" id="integer_create">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="tableModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Table</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="needs-validation" novalidate id="table_table">
+                    <div class="modal-body">
+                        <label for="table1">Name</label>
+                        <input type="text" class="form-control" id="table1" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid value.
+                        </div>
+                        <label for="table2">Dimension</label>
+                        <input type="text" class="form-control" id="table2" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid value.
+                        </div>
+                        <small class="form-text text-muted">For higher dimensional table, plese refer to the mannual.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-outline-dark" id="table_create">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="clockModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Clcok</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="needs-validation" novalidate id="clock_table">
+                    <div class="modal-body">
+                        <label for="clock1">Name</label>
+                        <input type="text" class="form-control" id="clock1" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid name.
+                        </div>
+                        <label for="clock2">Max Start times</label>
+                        <input type="number" class="form-control" id="clock2" required>
+                        <label for="clock3">Max Stop times</label>
+                        <input type="number" class="form-control" id="clock3" required>
+                       
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-outline-dark" id="clock_create">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="coincidenceModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Coincidence</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="needs-validation" novalidate id="coincidence_table">
+                    <div class="modal-body">
+                        <label for="coincidence1">Name</label>
+                        <input type="text" class="form-control" id="coincidence1" required>
+                        <div class="invalid-feedback">
+                            Please provide a valid name.
+                        </div>
+                        <label for="coincidence2">Number of Coincidence Slots</label>
+                        <input type="number" class="form-control" id="coincidence2" required>
+                        <label for="coincidence3">Emit to this channel# when fulfilled</label>
+                        <input type="number" class="form-control" id="coincidence3" required>
+                        <label for="coincidence4">Maximum time interval allowed for a coincidence</label>
+                        <input type="number" class="form-control" id="coincidence4" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-outline-dark" id="clock_create">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="createModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog  " style="max-width: 80%" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Tools</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <img class="card-img-top" src="img/rfile.png">
+                                <div class="card-body">
+                                    <h5 class="card-title"><a href="#" id="btn_create_rfile">RFILE</a></h5>
+                                    <p class="card-text">RFILE works like a placeholder, for the physical timetagger device in the real-world, in the Virtual Instruments. </p>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <img class="card-img-top" src="img/histogram.png">
+                                <div class="card-body">
+                                    <h5 class="card-title"><a href="#" id="btn_create_histogram">HISTOGRAM</a></h5>
+                                    <p class="card-text">Histogram stores statistics with time intervals or an arbitray INTEGER.</p>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <img class="card-img-top" src="img/clock.png">
+                                <div class="card-body">
+                                    <h5 class="card-title"><a href="#" id="btn_create_clock">CLOCK</a></h5>
+                                    <p class="card-text">Clock is a time interval recorder with a start button and a stop button. </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+
+                    <div class="row" style="padding-top: 1rem;">
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <img class="card-img-top" src="img/coincidence.png">
+                                <div class="card-body">
+                                    <h5 class="card-title"><a href="#" id="btn_create_coincidence">COINCIDENCE</a></h5>
+                                    <p class="card-text">Coincidence is a tool that emits a signal when the coincidence condition is fulfilled.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <img class="card-img-top" src="img/integer.png">
+                                <div class="card-body">
+                                    <h5 class="card-title"><a href="#" id="btn_create_integer">INTEGER</a></h5>
+                                    <p class="card-text">Integer is a fast storage for scalar that supports up to 64-bits.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <img class="card-img-top" src="img/table.png">
+                                <div class="card-body">
+                                    <h5 class="card-title"><a href="#" id="btn_create_table">TABLE</a></h5>
+                                    <p class="card-text">Table is a general integer storage for vectors, matrix, or tensors.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- application main script -->
+    <script type="text/javascript" src="js/draw.js"></script>
+
+</body>
+</html>

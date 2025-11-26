@@ -15,9 +15,9 @@ from typing import Optional
 
 def measure_save_classify(timeres_file = "",timetagger: Optional[mea.run_swabian] = None, N=3,bins = 100,binsize = 200) -> mea.run_swabian:
 
-    #timetagger is a instance of run_swabian
+    # timetagger is an instance of run_swabian
     # it needs a running swabian file, and a timetagger object. return to the possibility of judging
-    # the timeres file should be the file when pthe measuring timeres file will be saved. so it only measure and save
+    # the timeres file should be the file when the measuring timeres file will be saved. so it only measure and save
     if timetagger is None:
         timetagger = mea.run_swabian(timeres_file)       # <-- instantiate!
     if timetagger.tagger is None:
