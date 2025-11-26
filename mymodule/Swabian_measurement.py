@@ -120,5 +120,5 @@ class run_swabian:
 
 if __name__ == "__main__":
     tagger = run_swabian()
-    tagger.start_dump()
-    tagger.stop_dump()
+    tagger.connect()
+    tagger.free()
