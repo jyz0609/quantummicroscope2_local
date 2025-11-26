@@ -56,12 +56,12 @@ class run_swabian:
         print("tagger freed and connection terminated. If need another measurement, create a new object")
 
     def dump_time(self, measuringtime = 1):
-        print(f"dumping file for {measuringtime} seconds")
+        print(f"dumping file for {int(measuringtime)} seconds")
         self.dump = TimeTagger.Dump(tagger=self.tagger, filename=self.timeres_file, max_tags=-1,
                                     channels=self.chan_list)
         # creat the dump object to record data
         self.dump.start()
-        time.sleep(measuringtime)
+        time.sleep(int(measuringtime))
         self.dump.stop()
         print(f"finished dumping after{measuringtime} seconds")
 

@@ -1598,6 +1598,8 @@ class ScanTab:
             self.g2_doublecheck.set(0)
 
         def g2_measurement_peaks_ver2():
+            self.logger_box.module_logger.info(
+                f"starting multiple peaks measurement")
             #written in 17 Nov 2025. it reads the coordinates.json file and take each measuremnet using mymodule/Measure_save_classify. if returned value smaller than 0.5, it write to coord
             if self.g2_doublecheckbool.get():
                 #start a timetagger
@@ -1638,8 +1640,11 @@ class ScanTab:
                     self.t7.move_to_pos(x_coord=int(y), y_coord=int(x))
                     coord_timeres_file = os.path.join(timeres_folder,f"({x},{y}).timeres")
                     prob = measure_save_classify(timeres_file=coord_timeres_file,timetagger=swabian,N=self.average_count_per_bin.get())
+                    self.logger_box.module_logger.info(
+                        f"SPE probability in ({x},{y}) is {1-prob}")
                     if prob < 0.5:
                         SPEs.append([x,y])
+
 
                 save_SPEs(filepath=coord_json_path,coords=SPEs)
                 print(f'the cist of SPEs judged by the classifier: {SPEs}')
@@ -1647,6 +1652,7 @@ class ScanTab:
             else:
                 print(f"checkbox not enabled! will not perform multiple measurements")
                 self.logger_box.module_logger.info(f"checkbox not enabled! will not perform multiple measurements")
+
         def g2_measurement_one():
             self.suggest_name()
 
