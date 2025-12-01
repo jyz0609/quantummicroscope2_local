@@ -1733,13 +1733,16 @@ class ScanTab:
                     },
                     daemon=True,  # 主程序退出时，这个线程会自动结束
                 )
-                t.start()
+                #t.start()
 
 
                 #real time correlation measurement
                 r1, r2 = swabian.get_countrate()
                 measuringtime = self.average_count_per_bin.get() / (r1 * r2 * 200 * (1e-12))
-                swabian.correlation_realtime(measuringtime=measuringtime)
+                swabian.timeres_file = coord_timeres_file
+                swabian.correlation_realtime_save(measuringtime=measuringtime)
+
+
 
                 #prob = measure_save_classify(timeres_file=coord_timeres_file, timetagger=swabian, N=self.average_count_per_bin.get())
                 #if prob < 0.5:

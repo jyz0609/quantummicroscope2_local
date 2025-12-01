@@ -81,7 +81,7 @@ class run_swabian:
         # 1103: do not know if it will work when multiple countrate is called. maybe use total count to see.
         print(f"first channel countrate =  {first}, second channel countrate = {second}")
         return first , second
-    def correlation_realtime(self,measuringtime = 10,channels = None):
+    def correlation_realtime_save(self,measuringtime = 10,channels = None):
         if channels is None:
             channels = [2, 3]
         correlation = TimeTagger.Correlation(tagger = self.tagger,
@@ -90,28 +90,77 @@ class run_swabian:
         binwidth = 200,
         n_bins = 200)
         correlation.stop()
+        filewriter = TimeTagger.FileWriter(tagger=self.tagger, filename=os.path.splitext(self.timeres_file)[0]+ ".ttbin",channels=self.chan_list)
         correlation.startFor(int(measuringtime*1E12))
 
         plt.ion()
 
-        fig, ax = plt.subplots()
-        ax.set_xlabel("Time difference (ns)")
-        ax.set_ylabel("Counts")
+        #fig, ax = plt.subplots()
+        #ax.set_xlabel("Time difference (ns)")
+        #ax.set_ylabel("Counts")
+#
+        ## 只要外部还在跑，就持续刷新
+        #while correlation.isRunning():
+        #    x = correlation.getIndex()/int(1000)
+        #    y = correlation.getData()
+#
+        #    ax.clear()
+        #    ax.plot(x, y)
+        #    ax.set_xlabel("Time difference (ns)")
+        #    ax.set_ylabel(f"Counts")
+        #    fig.canvas.draw_idle()
+        #    plt.pause(0.5)  # 让图窗有时间响应 & 刷新
+        #plt.ioff()
+        #plt.close(fig)
 
-        # 只要外部还在跑，就持续刷新
+        figure_save_path = os.path.splitext(self.timeres_file)[0] + ".png"
+        # Plot the results
+        fig1, [ax1, ax2] = plt.subplots(2, sharex=True)
+
+
         while correlation.isRunning():
             x = correlation.getIndex()/int(1000)
-            y = correlation.getData()
+            y1 = correlation.getData()
+            y2 = correlation.getDataNormalized()
+            ax1.clear()
+            ax2.clear()
 
-            ax.clear()
-            ax.plot(x, y)
-            ax.set_xlabel("Time difference (ns)")
-            ax.set_ylabel(f"Counts")
-            fig.canvas.draw_idle()
-            plt.pause(0.5)  # 让图窗有时间响应 & 刷新
+            ax2.plot(x, y2)
+            ax2.legend()
+
+            ax1.plot(x, y1)
+
+            ax1.set_xlabel('Time [ns]', fontsize=18)
+            ax1.set_ylabel('Coincidences', fontsize=20)
+            ax1.grid()
+
+            ax2.set_xlabel('Time [ns]', fontsize=18)
+            ax2.set_ylabel('$g^2$', fontsize=20)
+            ax2.grid()
+
+            fig1.canvas.draw_idle()
+            plt.pause(0.5)
+
+        # ax1.set_title(f"Optical delay: {int(distance)} [km]")
+        # Save figure
+        plt.savefig(figure_save_path, dpi=600, bbox_inches="tight")
+        print(f"file saved! path = {figure_save_path}")
+        # Define output file name
+        filename_txt = os.path.splitext(self.timeres_file)[0] + ".txt"
+        x = correlation.getIndex() / int(1000)
+        y1 = correlation.getData()
+        y2 = correlation.getDataNormalized()
+
+        # save the data in a txt file. Open the file manually to write labeled rows
+        with open(filename_txt, "w") as f:
+            f.write("delta_t(ns)\tcount\tnormalized_g2\n")  # Write header (tab-separated)
+            for i in range(len(x)):
+                f.write(f"{x[i]:.6f}\t{y1[i]:.6f}\t{y2[i]:.6f}\n")  # Tab-separated values
+
+        print(f"Data saved successfully to {filename_txt} (compatible with Excel & Origin).")
+        # plt.show()
         plt.ioff()
-        plt.close(fig)
-
+        plt.close(fig1)
 
 
 
