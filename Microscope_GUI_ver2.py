@@ -226,8 +226,8 @@ class ScanTab:
         self.int_time = tk.DoubleVar(value=0.005)
         self.freq = tk.DoubleVar(value=1.0)
         self.nr_frames = tk.IntVar(value=1)
-        self.ampX = tk.DoubleVar(value=0.3)  # --> step values between -0.3 and 0.3
-        self.ampY = tk.DoubleVar(value=0.3)  # --> sine values between -0.3 and 0.3
+        self.ampX = tk.DoubleVar(value=0.31949)  # --> step values between -0.3 and 0.3
+        self.ampY = tk.DoubleVar(value=0.31949)  # --> sine values between -0.3 and 0.3
 
         self.minX = tk.DoubleVar(value=0)
         self.maxX = tk.DoubleVar(value=0)
@@ -237,9 +237,9 @@ class ScanTab:
         self.scopelength = tk.DoubleVar(value=100)
 
         self.lensslope = tk.DoubleVar(value=self.setup_loaded["calibrated_lenslope"])
-        self.scopelength.set(round(self.ampX.get()*self.lensslope.get(),10))
+        self.scopelength.set(round(self.ampX.get()*self.lensslope.get(),2))
         self.stepsize = tk.DoubleVar(value=30)
-        self.stepsize.set(round(self.scopelength.get()*1000/self.dimY.get(),5))
+        self.stepsize.set(round(self.scopelength.get()*1000/self.dimY.get(),2))
 
         self.heatmapratio = tk.DoubleVar(value=0.5)
         self.g2measuringtime = tk.IntVar(value=60)
@@ -1740,7 +1740,7 @@ class ScanTab:
                 r1, r2 = swabian.get_countrate()
                 measuringtime = self.average_count_per_bin.get() / (r1 * r2 * 200 * (1e-12))
                 swabian.timeres_file = coord_timeres_file
-                swabian.correlation_realtime_save(measuringtime=measuringtime)
+                swabian.correlation_realtime_save_ver2(measuringtime=measuringtime)
 
 
 

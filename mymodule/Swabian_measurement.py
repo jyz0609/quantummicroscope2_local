@@ -162,8 +162,63 @@ class run_swabian:
         plt.ioff()
         plt.close(fig1)
 
+    def correlation_realtime_save_ver2(self, measuringtime=10, channels=None):
+        # in this version, only the g2 data will be plot(bug fixed). and
+        if channels is None:
+            channels = [2, 3]
+        correlation = TimeTagger.Correlation(tagger=self.tagger,
+                                             channel_1=channels[0],
+                                             channel_2=channels[1],
+                                             binwidth=200,
+                                             n_bins=200)
+        correlation.stop()
+        filewriter = TimeTagger.FileWriter(tagger=self.tagger,
+                                           filename=os.path.splitext(self.timeres_file)[0] + ".ttbin",
+                                           channels=self.chan_list)
+        correlation.startFor(int(measuringtime * 1E12))
+        plt.ioff()  # ❗关闭全局交互模式，避免 show 旧图
 
 
+        figure_save_path = os.path.splitext(self.timeres_file)[0] + ".png"
+        # Plot the results
+        fig1, [ax1, ax2] = plt.subplots(2, sharex=True)
+        fig1.show()  # ❗只显示这个 figure，不会显示之前的任何图
+        while correlation.isRunning():
+            x = correlation.getIndex() / int(1000)
+            y1 = correlation.getData()
+            y2 = correlation.getDataNormalized()
+            ax1.clear()
+            ax2.clear()
+            ax2.plot(x, y2)
+            ax2.legend()
+            ax1.plot(x, y1)
+            ax1.set_xlabel('Time [ns]', fontsize=18)
+            ax1.set_ylabel('Coincidences', fontsize=20)
+            ax1.grid()
+            ax2.set_xlabel('Time [ns]', fontsize=18)
+            ax2.set_ylabel('$g^2$', fontsize=20)
+            ax2.grid()
+            fig1.canvas.draw_idle()
+            fig1.canvas.flush_events()  # ❗ 推荐加入，刷新更稳定
+
+            time.sleep(0.5)  # 替代 plt.pause，避免触发 plt 的全局事件循环
+        # ax1.set_title(f"Optical delay: {int(distance)} [km]")
+        # Save figure
+        plt.savefig(figure_save_path, dpi=600, bbox_inches="tight")
+        print(f"file saved! path = {figure_save_path}")
+        # Define output file name
+        filename_txt = os.path.splitext(self.timeres_file)[0] + ".txt"
+        x = correlation.getIndex() / int(1000)
+        y1 = correlation.getData()
+        y2 = correlation.getDataNormalized()
+        # save the data in a txt file. Open the file manually to write labeled rows
+        with open(filename_txt, "w") as f:
+            f.write("delta_t(ns)\tcount\tnormalized_g2\n")  # Write header (tab-separated)
+            for i in range(len(x)):
+                f.write(f"{x[i]:.6f}\t{y1[i]:.6f}\t{y2[i]:.6f}\n")  # Tab-separated values
+        print(f"Data saved successfully to {filename_txt} (compatible with Excel & Origin).")
+        # plt.show()
+        plt.ioff()
 
 
 
