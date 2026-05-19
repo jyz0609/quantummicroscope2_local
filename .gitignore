@@ -8,3 +8,4 @@ filtered_image.png
 Calibration_moves.txt
 1023test.txt
 .idea/*
+.matplotlib_cache/*

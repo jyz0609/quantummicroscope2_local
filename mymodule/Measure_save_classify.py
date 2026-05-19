@@ -1,5 +1,4 @@
 
-from . import CNN_classifier as cla
 from . import ETA_analysis as ana
 from . import Swabian_measurement as mea
 import os
@@ -34,6 +33,7 @@ def measure_save_classify(timeres_file = "",timetagger: Optional[mea.run_swabian
     #start eta analysis
     eta_engine = ana.load_eta(eta_recipe, bins=bins, binsize=binsize, delay_1 = 0 )
     g2_onedirection = ana.analyze_savepng_returnonedirection(timetag_file=timeres_file,eta_engine=eta_engine,measuringtime=measuringtime)
+    from . import CNN_classifier as cla
     prob = cla.normalized(arr=g2_onedirection)
     print(f"the probability to be SPE is {1-prob}")
     #prob closer to 0: more likely to be SPE

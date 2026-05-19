@@ -23,7 +23,6 @@ import logging
 
 # Packages for ETA backend
 import json
-import etabackend.eta  # Available at: https://github.com/timetag/ETA, https://eta.readthedocs.io/en/latest/
 
 from pathlib import Path
 import re
@@ -34,18 +33,12 @@ import socket
 import pickle
 import copy
 import threading
-from Swabian_Microscope_library import draw_image_heatmap_ratio
-import mymodule.peak_analysis
 
 import filename_process
 import g2_coord
 
 
-import image_analysis
 import subprocess
-
-from mymodule.Measure_save_classify import measure_save_classify
-import mymodule.Swabian_measurement
 
 import threading
 
@@ -1327,6 +1320,7 @@ class ScanTab:
             # Find the peak value
             sigma = 2/5* spot_length_scale * scan_resolution / scan_size # Adapt sigma to the size of the scan
 
+            import image_analysis
             xpos, ypos = image_analysis.find_peak(np.array(data), sigma=sigma, show_map=True)
 
             self.t7.move_to_pos(x_coord=ypos, y_coord=xpos)
@@ -1535,6 +1529,7 @@ class ScanTab:
 
 
         def ratio_plot():
+            from Swabian_Microscope_library import draw_image_heatmap_ratio
             fig_ratio = draw_image_heatmap_ratio(matrix=np.loadtxt("nonspeedmatrix.txt"), ratio=self.heatmapratio.get(), title=f"ratioplot",
                                                # f"Theoretical={1/const['scan_fps']} s",
                                                fig_title=f"ratioplot",
@@ -1547,6 +1542,8 @@ class ScanTab:
             matrix = np.loadtxt("nonspeedmatrix.txt") #note this is to fit the scan direction
             matrix1 = np.flip(matrix, axis=None)
             matrix2 = matrix1.transpose()
+            import mymodule.peak_analysis
+            from Swabian_Microscope_library import draw_image_heatmap_ratio
             matrix, results = mymodule.peak_analysis.process_matrix_universalthresh(matrix2,peaknumber = self.find_peak_number.get())
             timeres_folder  = os.path.splitext(self.anal_data_file.get())[0]
             #g2_coord.save_coords_to_file(filename="coordinate_g2.txt", timeresfile= self.anal_data_file.get(),results=results)
@@ -1575,6 +1572,7 @@ class ScanTab:
                 matrix = np.loadtxt("nonspeedmatrix.txt")  # note this is to fit the scan direction
                 matrix1 = np.flip(matrix, axis=None)
                 matrix2 = matrix1.transpose()
+                import mymodule.peak_analysis
                 matrix, results = mymodule.peak_analysis.process_matrix_universalthresh(matrix2,peaknumber = self.find_peak_number.get())
 
                 results_new = []
@@ -1603,6 +1601,7 @@ class ScanTab:
             #written in 17 Nov 2025. it reads the coordinates.json file and take each measuremnet using mymodule/Measure_save_classify. if returned value smaller than 0.5, it write to coord
             if self.g2_doublecheckbool.get():
                 #start a timetagger
+                import mymodule.Swabian_measurement
                 swabian = mymodule.Swabian_measurement.run_swabian()
                 swabian.connect()
 
@@ -1639,6 +1638,7 @@ class ScanTab:
                 for x, y in coords:
                     self.t7.move_to_pos(x_coord=int(y), y_coord=int(x))
                     coord_timeres_file = os.path.join(timeres_folder,f"({x},{y}).timeres")
+                    from mymodule.Measure_save_classify import measure_save_classify
                     prob = measure_save_classify(timeres_file=coord_timeres_file,timetagger=swabian,N=self.average_count_per_bin.get())
                     self.logger_box.module_logger.info(
                         f"SPE probability in ({x},{y}) is {1-prob}")
@@ -1718,10 +1718,12 @@ class ScanTab:
 
 
                 # start a timetagger
+                import mymodule.Swabian_measurement
                 swabian = mymodule.Swabian_measurement.run_swabian()
                 swabian.connect()
 
                 #start a threading to do measuement and save and classify
+                from mymodule.Measure_save_classify import measure_save_classify
                 t = threading.Thread(
                     target=measure_save_classify,
                     kwargs={
@@ -1867,6 +1869,7 @@ class ScanTab:
             # ________ LOAD RECIPE ETA ___________
             with open(recipe_file, 'r') as filehandle:
                 recipe_obj = json.load(filehandle)
+            import etabackend.eta
             eta_engine = etabackend.eta.ETA()
             eta_engine.load_recipe(recipe_obj)
             # Set parameters in the recipe
@@ -3245,6 +3248,7 @@ class T7:
                 #Nov 19th 2025: create a timetagger object and start dumping
 
                 print(f"test 251125 the filemane is : {self.anal_filename}")
+                import mymodule.Swabian_measurement
                 timetagger =  mymodule.Swabian_measurement.run_swabian(filepath=self.anal_filename)
                 timetagger.connect()
                 timetagger.start_dump()
@@ -4294,4 +4298,5 @@ def main():
     windowgui = WindowGUI()
     windowgui.root.mainloop()
 
-main()
+if __name__ == "__main__":
+    main()

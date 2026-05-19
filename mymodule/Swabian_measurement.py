@@ -2,7 +2,10 @@
 import os.path
 import time
 import numpy
-import TimeTagger
+try:
+    import TimeTagger
+except ModuleNotFoundError:
+    TimeTagger = None
 import etabackend.eta as eta  # Available at: https://github.com/timetag/ETA, https://eta.readthedocs.io/en/latest/
 import etabackend.tk as etatk
 # file: test_live_plot.py
@@ -10,6 +13,16 @@ import matplotlib
 # 如果你怀疑后端有问题，可以强制用 TkAgg（GUI 后端）
 matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
+
+
+def _require_timetagger():
+    if TimeTagger is None:
+        raise RuntimeError(
+            "Swabian TimeTagger SDK is not installed in this Python environment. "
+            "Install the official Swabian Instruments Time Tagger software/Python package, "
+            "then restart the GUI."
+        )
+    return TimeTagger
 
 
 class run_swabian:
@@ -28,9 +41,10 @@ class run_swabian:
         self.channel_list = [1,2,3,4]
 
     def connect(self):
-        self.tagger = TimeTagger.createTimeTagger()
+        TT = _require_timetagger()
+        self.tagger = TT.createTimeTagger()
         # create the timetagger object
-        self.chan_list = self.tagger.getChannelList(TimeTagger.TT_CHANNEL_RISING_EDGES)
+        self.chan_list = self.tagger.getChannelList(TT.TT_CHANNEL_RISING_EDGES)
         self.chan_list = list(self.channel_list)
         print(f"self channel list is {self.chan_list}")
         # get all the available channels from the list
@@ -41,7 +55,8 @@ class run_swabian:
         self.tagger.setTriggerLevel(marker_ch, 0.2)
         # set the trigger level of the marker channel. The current marker channel is 4, but this can be changed if the recipe is modified accordingly
     def start_dump(self):
-        self.dump = TimeTagger.Dump(tagger=self.tagger, filename=self.timeres_file, max_tags=-1,
+        TT = _require_timetagger()
+        self.dump = TT.Dump(tagger=self.tagger, filename=self.timeres_file, max_tags=-1,
                                     channels=self.channel_list)
         # creat the dump object to record data
         self.dump.stop()
@@ -52,12 +67,14 @@ class run_swabian:
         #the tagger need to be freed after one measurement
 
     def free(self):
-        TimeTagger.freeTimeTagger(self.tagger)
+        TT = _require_timetagger()
+        TT.freeTimeTagger(self.tagger)
         print("tagger freed and connection terminated. If need another measurement, create a new object")
 
     def dump_time(self, measuringtime = 1):
+        TT = _require_timetagger()
         print(f"dumping file for {int(measuringtime)} seconds")
-        self.dump = TimeTagger.Dump(tagger=self.tagger, filename=self.timeres_file, max_tags=-1,
+        self.dump = TT.Dump(tagger=self.tagger, filename=self.timeres_file, max_tags=-1,
                                     channels=self.chan_list)
         # creat the dump object to record data
         self.dump.start()
@@ -66,12 +83,13 @@ class run_swabian:
         print(f"finished dumping after{measuringtime} seconds")
 
     def get_countrate(self,channels = None):
+        TT = _require_timetagger()
         if channels is None:
             channels = [2, 3]
         print("waiting 2s for stable count")
         time.sleep(2)
         print("getting count rate for 5s")
-        counter = TimeTagger.Countrate(self.tagger, channels)
+        counter = TT.Countrate(self.tagger, channels)
         time.sleep(5)
         countratearr = counter.getData()
         first = round(float(countratearr[0]), 4)
@@ -82,15 +100,16 @@ class run_swabian:
         print(f"first channel countrate =  {first}, second channel countrate = {second}")
         return first , second
     def correlation_realtime_save(self,measuringtime = 10,channels = None):
+        TT = _require_timetagger()
         if channels is None:
             channels = [2, 3]
-        correlation = TimeTagger.Correlation(tagger = self.tagger,
+        correlation = TT.Correlation(tagger = self.tagger,
         channel_1 = channels[0],
         channel_2 = channels[1],
         binwidth = 200,
         n_bins = 200)
         correlation.stop()
-        filewriter = TimeTagger.FileWriter(tagger=self.tagger, filename=os.path.splitext(self.timeres_file)[0]+ ".ttbin",channels=self.chan_list)
+        filewriter = TT.FileWriter(tagger=self.tagger, filename=os.path.splitext(self.timeres_file)[0]+ ".ttbin",channels=self.chan_list)
         correlation.startFor(int(measuringtime*1E12))
 
         plt.ion()
@@ -163,16 +182,17 @@ class run_swabian:
         plt.close(fig1)
 
     def correlation_realtime_save_ver2(self, measuringtime=10, channels=None):
+        TT = _require_timetagger()
         # in this version, only the g2 data will be plot(bug fixed). and
         if channels is None:
             channels = [2, 3]
-        correlation = TimeTagger.Correlation(tagger=self.tagger,
+        correlation = TT.Correlation(tagger=self.tagger,
                                              channel_1=channels[0],
                                              channel_2=channels[1],
                                              binwidth=200,
                                              n_bins=200)
         correlation.stop()
-        filewriter = TimeTagger.FileWriter(tagger=self.tagger,
+        filewriter = TT.FileWriter(tagger=self.tagger,
                                            filename=os.path.splitext(self.timeres_file)[0] + ".ttbin",
                                            channels=self.chan_list)
         correlation.startFor(int(measuringtime * 1E12))
