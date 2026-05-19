@@ -47,3 +47,6 @@ opencv-python
 tensorflow
 ttkthemes
 pyserial
+PySide6
+qtpy
+pyqtgraph==0.13.7
