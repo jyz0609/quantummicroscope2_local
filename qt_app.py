@@ -1,35 +1,6 @@
 from __future__ import annotations
 
-import argparse
-import logging
-import sys
-
-from qtpy import QtWidgets
-
-from gui.main_window import MainWindow
-from gui.style import apply_style
-
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Quantum Microscope Qt GUI")
-    parser.add_argument(
-        "--smoke",
-        action="store_true",
-        help="Construct the application and exit without showing the window.",
-    )
-    return parser
-
-
-def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    args = build_parser().parse_args(argv)
-    app = QtWidgets.QApplication(sys.argv[:1])
-    apply_style(app)
-    window = MainWindow()
-    if args.smoke:
-        return 0
-    window.show()
-    return app.exec_()
+from quantummicroscope.app import build_parser, main
 
 
 if __name__ == "__main__":

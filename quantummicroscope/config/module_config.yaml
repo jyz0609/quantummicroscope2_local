@@ -1,0 +1,30 @@
+hardware:
+  dummy_scanner:
+    module.Class: quantummicroscope.hardware.scanner.dummy_scanner_hardware.DummyScannerHardware
+  labjack_t7:
+    module.Class: quantummicroscope.hardware.labjack.labjack_t7.LabJackT7
+  dummy_timetagger:
+    module.Class: quantummicroscope.hardware.timetagger.dummy_timetagger.DummyTimeTagger
+
+logic:
+  scanner_logic:
+    module.Class: quantummicroscope.logic.scanner_logic.ScannerLogic
+    connect:
+      scanner: dummy_scanner
+      counter: dummy_scanner
+  counter_logic:
+    module.Class: quantummicroscope.logic.counter_logic.CounterLogic
+  analysis_logic:
+    module.Class: quantummicroscope.logic.analysis_logic.AnalysisLogic
+  g2_logic:
+    module.Class: quantummicroscope.logic.g2_logic.G2Logic
+  calibration_logic:
+    module.Class: quantummicroscope.logic.calibration_logic.CalibrationLogic
+  save_logic:
+    module.Class: quantummicroscope.logic.save_logic.SaveLogic
+
+gui:
+  quantum_microscope_gui:
+    module.Class: quantummicroscope.gui.main_window.QuantumMicroscopeMainWindow
+    connect:
+      scanner_logic: scanner_logic
