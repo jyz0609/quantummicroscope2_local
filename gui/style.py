@@ -13,7 +13,7 @@ QGroupBox {
     border: 1px solid #2b3542;
     border-radius: 6px;
     margin-top: 14px;
-    padding: 12px 10px 10px 10px;
+    padding: 10px 8px 8px 8px;
     background: #1b222b;
 }
 
@@ -29,7 +29,7 @@ QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QPlainTextEdit {
     background: #10151b;
     border: 1px solid #344150;
     border-radius: 4px;
-    padding: 5px 7px;
+    padding: 4px 6px;
     color: #eef4f8;
     selection-background-color: #2f80ed;
 }
@@ -42,7 +42,7 @@ QPushButton {
     background: #263241;
     border: 1px solid #3a4858;
     border-radius: 5px;
-    padding: 7px 12px;
+    padding: 6px 10px;
     color: #f0f5f9;
 }
 
@@ -70,6 +70,11 @@ QPushButton#stopButton {
     border-color: #c44852;
 }
 
+QPushButton#smallButton {
+    padding: 4px 6px;
+    min-width: 58px;
+}
+
 QTabWidget::pane {
     border: 1px solid #2b3542;
 }
@@ -88,6 +93,43 @@ QTabBar::tab:selected {
 QStatusBar {
     background: #10151b;
     color: #cbd5df;
+}
+
+QScrollArea#controlsScroll {
+    background: #151a20;
+    border: none;
+}
+
+QWidget#controlsPanel {
+    background: #151a20;
+}
+
+QScrollBar:vertical {
+    background: #10151b;
+    width: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #3a4858;
+    border-radius: 5px;
+    min-height: 32px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #4a5b6e;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+    border: none;
+    background: transparent;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: transparent;
 }
 """
 

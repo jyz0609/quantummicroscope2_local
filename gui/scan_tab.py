@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pyqtgraph as pg
 from qtpy import QtCore, QtWidgets
@@ -25,15 +23,32 @@ class ScanTab(QtWidgets.QWidget):
         root.setSpacing(12)
 
         controls = QtWidgets.QWidget()
+        controls.setObjectName("controlsPanel")
+        controls.setMinimumWidth(340)
         controls_layout = QtWidgets.QVBoxLayout(controls)
-        controls_layout.setContentsMargins(0, 0, 0, 0)
-        controls_layout.setSpacing(10)
+        controls_layout.setContentsMargins(8, 8, 8, 8)
+        controls_layout.setSpacing(8)
+
+        controls_scroll = QtWidgets.QScrollArea()
+        controls_scroll.setObjectName("controlsScroll")
+        controls_scroll.setWidgetResizable(True)
+        controls_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        controls_scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        controls_scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+        controls_scroll.setMinimumWidth(360)
+        controls_scroll.setMaximumWidth(460)
+        controls_scroll.setWidget(controls)
 
         acquisition = self._group("Acquisition")
         form = QtWidgets.QFormLayout(acquisition)
+        self._configure_form(form)
         self.clue_edit = QtWidgets.QLineEdit()
         self.data_folder_edit = QtWidgets.QLineEdit()
         self.data_file_edit = QtWidgets.QLineEdit()
+        self._configure_path_edit(self.data_folder_edit, "Folder where scan data is written")
+        self._configure_path_edit(self.data_file_edit, "Generated scan filename")
+        self.data_folder_browse = QtWidgets.QPushButton("Browse")
+        self.data_folder_browse.setObjectName("smallButton")
         self.speed_combo = QtWidgets.QComboBox()
         self.speed_combo.addItems(["slow", "zoom", "fast"])
         self.dim_spin = QtWidgets.QSpinBox()
@@ -51,7 +66,7 @@ class ScanTab(QtWidgets.QWidget):
         self.record_check = QtWidgets.QCheckBox("Run Scan")
         self.diagnostics_check = QtWidgets.QCheckBox("Diagnostics")
         form.addRow("Info", self.clue_edit)
-        form.addRow("Data folder", self.data_folder_edit)
+        form.addRow("Data folder", self._path_row(self.data_folder_edit, self.data_folder_browse))
         form.addRow("Filename", self.data_file_edit)
         form.addRow("Mode", self.speed_combo)
         form.addRow("Dim Y/X", self.dim_spin)
@@ -64,6 +79,7 @@ class ScanTab(QtWidgets.QWidget):
 
         scan_range = self._group("Scan Range")
         range_form = QtWidgets.QFormLayout(scan_range)
+        self._configure_form(range_form)
         self.amp_x_spin = self._voltage_spin()
         self.amp_y_spin = self._voltage_spin()
         self.min_x_spin = self._voltage_spin()
@@ -88,6 +104,22 @@ class ScanTab(QtWidgets.QWidget):
         range_form.addRow("Length um", self.scope_spin)
         range_form.addRow("Lens slope", self.lens_slope_spin)
         range_form.addRow("Step nm", self.step_size_spin)
+        self.set_50_button = QtWidgets.QPushButton("Set 50")
+        self.set_50_button.setObjectName("smallButton")
+        self.set_100_button = QtWidgets.QPushButton("Set 100")
+        self.set_100_button.setObjectName("smallButton")
+        self.step_set_button = QtWidgets.QPushButton("Step Set")
+        self.step_set_button.setObjectName("smallButton")
+        self.step_get_button = QtWidgets.QPushButton("Step Get")
+        self.step_get_button.setObjectName("smallButton")
+        range_buttons = QtWidgets.QGridLayout()
+        range_buttons.setContentsMargins(0, 0, 0, 0)
+        range_buttons.setSpacing(6)
+        range_buttons.addWidget(self.set_50_button, 0, 0)
+        range_buttons.addWidget(self.set_100_button, 0, 1)
+        range_buttons.addWidget(self.step_set_button, 1, 0)
+        range_buttons.addWidget(self.step_get_button, 1, 1)
+        range_form.addRow("Helpers", range_buttons)
 
         motion = self._group("Motion")
         motion_layout = QtWidgets.QGridLayout(motion)
@@ -97,29 +129,46 @@ class ScanTab(QtWidgets.QWidget):
         self.y_pixel_spin.setRange(0, 4095)
         self.move_button = QtWidgets.QPushButton("Move")
         self.center_button = QtWidgets.QPushButton("Center")
+        self.copy_info_button = QtWidgets.QPushButton("Copy Info")
+        self.read_voltage_button = QtWidgets.QPushButton("Read Voltage")
+        self.lock_center_button = QtWidgets.QPushButton("Lock Center")
         motion_layout.addWidget(QtWidgets.QLabel("X pixel"), 0, 0)
         motion_layout.addWidget(self.x_pixel_spin, 0, 1)
         motion_layout.addWidget(QtWidgets.QLabel("Y pixel"), 1, 0)
         motion_layout.addWidget(self.y_pixel_spin, 1, 1)
         motion_layout.addWidget(self.move_button, 2, 0)
         motion_layout.addWidget(self.center_button, 2, 1)
+        motion_layout.addWidget(self.copy_info_button, 3, 0)
+        motion_layout.addWidget(self.read_voltage_button, 3, 1)
+        motion_layout.addWidget(self.lock_center_button, 4, 0, 1, 2)
 
         analysis = self._group("Analysis")
         analysis_form = QtWidgets.QFormLayout(analysis)
+        self._configure_form(analysis_form)
         self.analysis_file_edit = QtWidgets.QLineEdit()
         self.recipe_edit = QtWidgets.QLineEdit()
         self.save_folder_edit = QtWidgets.QLineEdit()
+        self._configure_path_edit(self.analysis_file_edit, "Timeres file to analyze")
+        self._configure_path_edit(self.recipe_edit, "ETA recipe file")
+        self._configure_path_edit(self.save_folder_edit, "Analysis output folder")
+        self.analysis_file_browse = QtWidgets.QPushButton("Browse")
+        self.analysis_file_browse.setObjectName("smallButton")
+        self.recipe_browse = QtWidgets.QPushButton("Browse")
+        self.recipe_browse.setObjectName("smallButton")
+        self.save_folder_browse = QtWidgets.QPushButton("Browse")
+        self.save_folder_browse.setObjectName("smallButton")
         self.bins_spin = QtWidgets.QSpinBox()
         self.bins_spin.setRange(1, 100000000)
         self.channel_edit = QtWidgets.QLineEdit()
-        analysis_form.addRow("Datafile", self.analysis_file_edit)
-        analysis_form.addRow("ETA recipe", self.recipe_edit)
-        analysis_form.addRow("Save folder", self.save_folder_edit)
+        analysis_form.addRow("Datafile", self._path_row(self.analysis_file_edit, self.analysis_file_browse))
+        analysis_form.addRow("ETA recipe", self._path_row(self.recipe_edit, self.recipe_browse))
+        analysis_form.addRow("Save folder", self._path_row(self.save_folder_edit, self.save_folder_browse))
         analysis_form.addRow("Bins", self.bins_spin)
         analysis_form.addRow("Channel", self.channel_edit)
 
         g2 = self._group("g2 / Calibration")
         g2_form = QtWidgets.QFormLayout(g2)
+        self._configure_form(g2_form)
         self.g2_time_spin = QtWidgets.QSpinBox()
         self.g2_time_spin.setRange(1, 10000000)
         self.calibration_interval_spin = QtWidgets.QSpinBox()
@@ -136,6 +185,22 @@ class ScanTab(QtWidgets.QWidget):
         g2_form.addRow("Peak number", self.peak_number_spin)
         g2_form.addRow("", self.multi_peak_check)
         g2_form.addRow("Average count/bin", self.average_count_spin)
+        self.g2_write_coord_button = QtWidgets.QPushButton("Single Coord Record")
+        self.g2_clear_coord_button = QtWidgets.QPushButton("Clear Coord File")
+        self.find_peaks_button = QtWidgets.QPushButton("Find Peaks")
+        self.g2_peaks_button = QtWidgets.QPushButton("g2 Measurement Peaks")
+        self.g2_one_button = QtWidgets.QPushButton("g2 Measurement One")
+        self.calibration_test_button = QtWidgets.QPushButton("Run Calibration Test")
+        g2_buttons = QtWidgets.QGridLayout()
+        g2_buttons.setContentsMargins(0, 0, 0, 0)
+        g2_buttons.setSpacing(6)
+        g2_buttons.addWidget(self.g2_write_coord_button, 0, 0)
+        g2_buttons.addWidget(self.g2_clear_coord_button, 0, 1)
+        g2_buttons.addWidget(self.find_peaks_button, 1, 0)
+        g2_buttons.addWidget(self.g2_peaks_button, 1, 1)
+        g2_buttons.addWidget(self.g2_one_button, 2, 0)
+        g2_buttons.addWidget(self.calibration_test_button, 2, 1)
+        g2_form.addRow("Actions", g2_buttons)
 
         actions = QtWidgets.QWidget()
         actions_layout = QtWidgets.QGridLayout(actions)
@@ -169,10 +234,13 @@ class ScanTab(QtWidgets.QWidget):
         self.image_view = pg.ImageView()
         self.image_view.ui.roiBtn.hide()
         self.image_view.ui.menuBtn.hide()
+        self.image_view.setMinimumSize(520, 420)
         display_layout.addWidget(self.image_view, 6)
 
         bottom = QtWidgets.QHBoxLayout()
         self.counts_table = QtWidgets.QTableWidget(4, 2)
+        self.counts_table.setMinimumHeight(150)
+        self.counts_table.setMaximumHeight(220)
         self.counts_table.setHorizontalHeaderLabels(["Channel", "Counts"])
         self.counts_table.verticalHeader().hide()
         self.counts_table.horizontalHeader().setStretchLastSection(True)
@@ -181,20 +249,46 @@ class ScanTab(QtWidgets.QWidget):
             self.counts_table.setItem(row, 1, QtWidgets.QTableWidgetItem(""))
         self.log_edit = QtWidgets.QPlainTextEdit()
         self.log_edit.setReadOnly(True)
+        self.log_edit.setMinimumHeight(150)
         bottom.addWidget(self.counts_table, 1)
         bottom.addWidget(self.log_edit, 3)
         display_layout.addLayout(bottom, 2)
 
-        root.addWidget(controls, 0)
+        root.addWidget(controls_scroll, 0)
         root.addWidget(display, 1)
 
         self.filename_button.clicked.connect(self._submit_and_suggest_filename)
+        self.data_folder_browse.clicked.connect(
+            lambda: self._browse_directory(self.data_folder_edit, "Select data folder")
+        )
+        self.analysis_file_browse.clicked.connect(
+            lambda: self._browse_file(self.analysis_file_edit, "Select timeres file", "Timeres (*.timeres);;All files (*)")
+        )
+        self.recipe_browse.clicked.connect(
+            lambda: self._browse_file(self.recipe_edit, "Select ETA recipe", "ETA recipe (*.eta);;All files (*)")
+        )
+        self.save_folder_browse.clicked.connect(
+            lambda: self._browse_directory(self.save_folder_edit, "Select analysis save folder")
+        )
         self.start_button.clicked.connect(self._start_scan)
         self.stop_button.clicked.connect(self.logic.cancel_scan)
         self.analyze_button.clicked.connect(self._analyze)
         self.count_button.clicked.connect(self.logic.count_signals)
         self.move_button.clicked.connect(self._move_to_pixel)
         self.center_button.clicked.connect(lambda: self._move_to_pixel(center=True))
+        self.copy_info_button.clicked.connect(self._copy_position_info)
+        self.read_voltage_button.clicked.connect(self._read_voltage)
+        self.lock_center_button.clicked.connect(self._lock_center)
+        self.set_50_button.clicked.connect(lambda: self._set_scope_length(50.0))
+        self.set_100_button.clicked.connect(lambda: self._set_scope_length(100.0))
+        self.step_set_button.clicked.connect(self._set_step_size_from_field)
+        self.step_get_button.clicked.connect(self._get_step_size_from_dim)
+        self.g2_write_coord_button.clicked.connect(self._write_single_g2_coordinate)
+        self.g2_clear_coord_button.clicked.connect(self.logic.clear_g2_coordinate_file)
+        self.find_peaks_button.clicked.connect(self._find_peaks)
+        self.g2_peaks_button.clicked.connect(self._run_g2_measurement_peaks)
+        self.g2_one_button.clicked.connect(self._run_g2_measurement_one)
+        self.calibration_test_button.clicked.connect(self._run_calibration_test)
         for widget in [
             self.dim_spin,
             self.amp_x_spin,
@@ -206,6 +300,28 @@ class ScanTab(QtWidgets.QWidget):
 
     def _group(self, title: str) -> QtWidgets.QGroupBox:
         return QtWidgets.QGroupBox(title)
+
+    def _configure_form(self, form: QtWidgets.QFormLayout):
+        form.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
+        form.setLabelAlignment(QtCore.Qt.AlignLeft)
+        form.setFormAlignment(QtCore.Qt.AlignTop)
+        form.setHorizontalSpacing(10)
+        form.setVerticalSpacing(6)
+
+    def _configure_path_edit(self, edit: QtWidgets.QLineEdit, placeholder: str):
+        edit.setMinimumWidth(190)
+        edit.setPlaceholderText(placeholder)
+        edit.setToolTip(placeholder)
+
+    def _path_row(self, edit: QtWidgets.QLineEdit, button: QtWidgets.QPushButton) -> QtWidgets.QWidget:
+        row = QtWidgets.QWidget()
+        layout = QtWidgets.QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+        button.setFixedWidth(72)
+        layout.addWidget(edit, 1)
+        layout.addWidget(button, 0)
+        return row
 
     def _voltage_spin(self) -> QtWidgets.QDoubleSpinBox:
         spin = QtWidgets.QDoubleSpinBox()
@@ -220,6 +336,7 @@ class ScanTab(QtWidgets.QWidget):
         self.logic.sigImageReady.connect(self.update_image)
         self.logic.sigCountsReady.connect(self.update_counts)
         self.logic.sigSuggestedFilename.connect(self.data_file_edit.setText)
+        self.logic.sigCopyText.connect(self._copy_text_to_clipboard)
         self.logic.sigScanStarted.connect(lambda: self._set_running(True))
         self.logic.sigScanFinished.connect(lambda _message: self._set_running(False))
 
@@ -308,6 +425,7 @@ class ScanTab(QtWidgets.QWidget):
         self.logic.update_scan_parameters(self._read_scan_params())
         self.logic.update_analysis_parameters(self._read_analysis_params())
         self.logic.update_g2_parameters(self._read_g2_params())
+        self.logic.update_current_position(self.x_pixel_spin.value(), self.y_pixel_spin.value())
 
     def _submit_and_suggest_filename(self):
         self._submit_forms()
@@ -327,7 +445,90 @@ class ScanTab(QtWidgets.QWidget):
             midpoint = max(0, self.dim_spin.value() // 2)
             self.x_pixel_spin.setValue(midpoint)
             self.y_pixel_spin.setValue(midpoint)
+            self._submit_forms()
         self.logic.move_to_pixel(self.x_pixel_spin.value(), self.y_pixel_spin.value())
+
+    def _browse_directory(self, target: QtWidgets.QLineEdit, title: str):
+        start_dir = self._dialog_start_dir(target)
+        selected = QtWidgets.QFileDialog.getExistingDirectory(self, title, start_dir)
+        if selected:
+            target.setText(selected)
+            self._submit_forms()
+
+    def _browse_file(self, target: QtWidgets.QLineEdit, title: str, file_filter: str):
+        start_dir = self._dialog_start_dir(target)
+        selected, _filter = QtWidgets.QFileDialog.getOpenFileName(self, title, start_dir, file_filter)
+        if selected:
+            target.setText(selected)
+            self._submit_forms()
+
+    def _dialog_start_dir(self, edit: QtWidgets.QLineEdit) -> str:
+        text = edit.text().strip()
+        if not text:
+            return ""
+        info = QtCore.QFileInfo(text)
+        if info.isDir():
+            return info.absoluteFilePath()
+        if info.absoluteDir().exists():
+            return info.absoluteDir().absolutePath()
+        return ""
+
+    def _set_scope_length(self, value: float):
+        self.scope_spin.setValue(value)
+        slope = self.lens_slope_spin.value()
+        if slope:
+            amp = round(value / slope, 5)
+            self.amp_x_spin.setValue(amp)
+            self.amp_y_spin.setValue(amp)
+        self._sync_derived_ranges()
+        self._submit_forms()
+        self.logic.set_scope_length(value)
+
+    def _set_step_size_from_field(self):
+        step = self.step_size_spin.value()
+        if step > 0:
+            dim = max(4, round(self.scope_spin.value() * 1000 / step))
+            self.dim_spin.setValue(dim)
+        self._submit_forms()
+        self.logic.set_step_size_nm(step)
+
+    def _get_step_size_from_dim(self):
+        step = round(self.scope_spin.value() * 1000 / max(1, self.dim_spin.value()), 3)
+        self.step_size_spin.setValue(step)
+        self._submit_forms()
+        self.logic.set_step_size_nm(step)
+
+    def _copy_position_info(self):
+        self._submit_forms()
+        self.logic.copy_position_info()
+
+    def _read_voltage(self):
+        self._submit_forms()
+        self.logic.read_voltage()
+
+    def _lock_center(self):
+        self._submit_forms()
+        self.logic.lock_center()
+
+    def _write_single_g2_coordinate(self):
+        self._submit_forms()
+        self.logic.write_single_g2_coordinate()
+
+    def _find_peaks(self):
+        self._submit_forms()
+        self.logic.find_peaks()
+
+    def _run_g2_measurement_peaks(self):
+        self._submit_forms()
+        self.logic.run_g2_measurement_peaks()
+
+    def _run_g2_measurement_one(self):
+        self._submit_forms()
+        self.logic.run_g2_measurement_one()
+
+    def _run_calibration_test(self):
+        self._submit_forms()
+        self.logic.run_calibration_test()
 
     def _sync_derived_ranges(self):
         amp_x = self.amp_x_spin.value()
@@ -373,6 +574,10 @@ class ScanTab(QtWidgets.QWidget):
         for row, channel in enumerate(range(1, 5)):
             value = counts.get(channel, "")
             self.counts_table.setItem(row, 1, QtWidgets.QTableWidgetItem(str(value)))
+
+    @QtCore.Slot(str)
+    def _copy_text_to_clipboard(self, text: str):
+        QtWidgets.QApplication.clipboard().setText(text)
 
     def _set_running(self, running: bool):
         self.start_button.setEnabled(not running)

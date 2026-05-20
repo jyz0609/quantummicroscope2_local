@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+import re
 import traceback
 
 import numpy as np
 from qtpy import QtCore
 
+import g2_coord
 from hardware.dummy_hardware import DummyMicroscopeHardware
 from logic.models import AnalysisParameters, G2Parameters, HardwareConfig, ScanParameters
 
@@ -58,6 +60,7 @@ class ScannerLogic(QtCore.QObject):
     sigImageReady = QtCore.Signal(object)
     sigCountsReady = QtCore.Signal(object)
     sigSuggestedFilename = QtCore.Signal(str)
+    sigCopyText = QtCore.Signal(str)
 
     def __init__(self, config: HardwareConfig | None = None, parent=None):
         super().__init__(parent)
@@ -68,6 +71,9 @@ class ScannerLogic(QtCore.QObject):
         self._hardware = DummyMicroscopeHardware(progress=self.sigLog.emit)
         self._thread: QtCore.QThread | None = None
         self._worker: _ScanWorker | None = None
+        self.current_x_pixel = 1
+        self.current_y_pixel = 1
+        self.center_locked = False
 
     @QtCore.Slot(object)
     def update_scan_parameters(self, params: ScanParameters):
@@ -80,6 +86,11 @@ class ScannerLogic(QtCore.QObject):
     @QtCore.Slot(object)
     def update_g2_parameters(self, params: G2Parameters):
         self.g2_params = params
+
+    @QtCore.Slot(int, int)
+    def update_current_position(self, x: int, y: int):
+        self.current_x_pixel = x
+        self.current_y_pixel = y
 
     @QtCore.Slot()
     def suggest_filename(self) -> str:
@@ -131,6 +142,7 @@ class ScannerLogic(QtCore.QObject):
     @QtCore.Slot(int, int)
     def move_to_pixel(self, x: int, y: int):
         try:
+            self.update_current_position(x, y)
             x_voltage, y_voltage = self._hardware.move_to_pixel(x, y, self.scan_params)
             self.sigLog.emit(f"Moved to pixel ({x}, {y}) at ({x_voltage:.4f} V, {y_voltage:.4f} V)")
         except Exception as exc:
@@ -155,6 +167,95 @@ class ScannerLogic(QtCore.QObject):
         image = np.exp(-((xx + 0.25) ** 2 + (yy - 0.15) ** 2) * 10.0)
         self.sigImageReady.emit(image)
         self.sigLog.emit(f"Analysis placeholder displayed for {self.analysis_params.data_file}")
+
+    @QtCore.Slot(float)
+    def set_scope_length(self, value: float):
+        self.scan_params.scope_length = value
+        if self.scan_params.lens_slope:
+            amp = round(value / self.scan_params.lens_slope, 5)
+            self.scan_params.amp_x = amp
+            self.scan_params.amp_y = amp
+        self.sigLog.emit(f"Scope length set to {value:g} um")
+
+    @QtCore.Slot(float)
+    def set_step_size_nm(self, value: float):
+        self.scan_params.step_size_nm = value
+        if value > 0:
+            self.scan_params.dim_y = max(4, round(self.scan_params.scope_length * 1000 / value))
+        self.sigLog.emit(f"Step size set to {value:g} nm")
+
+    @QtCore.Slot()
+    def copy_position_info(self):
+        data_file = self.analysis_params.data_file or self.scan_params.data_file
+        name_match = re.search(r"/([^/]+)_date", data_file.replace("\\", "/"))
+        time_match = re.search(r"time\(([^)]+)\)", data_file)
+        date_match = re.search(r"date\(([^)]+)\)", data_file)
+        if not (name_match and time_match and date_match):
+            self.sigError.emit("Could not build copyinfo text: datafile must contain name, date(...), and time(...).")
+            return
+        text = (
+            f"{name_match.group(1)}_{date_match.group(1)}_{time_match.group(1)}"
+            f"_({self.current_x_pixel},{self.current_y_pixel})"
+        )
+        self.sigCopyText.emit(text)
+        self.sigLog.emit(f"Copied position info: {text}")
+
+    @QtCore.Slot()
+    def write_single_g2_coordinate(self):
+        try:
+            g2_coord.write_single_coordinate(
+                x=self.current_x_pixel,
+                y=self.current_y_pixel,
+                timeresfile=self.analysis_params.data_file,
+            )
+            self.sigLog.emit(f"g2 coordinate ({self.current_x_pixel}, {self.current_y_pixel}) written")
+        except Exception as exc:
+            self.sigError.emit(str(exc))
+
+    @QtCore.Slot()
+    def clear_g2_coordinate_file(self):
+        try:
+            g2_coord.clear_coord_file()
+            self.sigLog.emit("g2 coordinate file cleared")
+        except Exception as exc:
+            self.sigError.emit(str(exc))
+
+    @QtCore.Slot()
+    def find_peaks(self):
+        self.sigLog.emit(
+            "Find peaks requested. Full peak-analysis migration is pending; "
+            "this button is wired through logic and is safe in offline mode."
+        )
+
+    @QtCore.Slot()
+    def run_g2_measurement_peaks(self):
+        self.sigLog.emit(
+            "g2 multi-peak measurement requested. Real TimeTagger/LabJack workflow "
+            "will be migrated behind a worker before hardware execution."
+        )
+
+    @QtCore.Slot()
+    def run_g2_measurement_one(self):
+        self.sigLog.emit(
+            "g2 one-peak measurement requested. Real hardware workflow is not run "
+            "from the GUI thread in this Qt increment."
+        )
+
+    @QtCore.Slot()
+    def run_calibration_test(self):
+        self.sigLog.emit(
+            "Calibration test requested. Calibration hardware workflow is pending "
+            "worker-backed migration."
+        )
+
+    @QtCore.Slot()
+    def read_voltage(self):
+        self.sigLog.emit("Read voltage requested. Offline dummy backend has no analog voltage readback yet.")
+
+    @QtCore.Slot()
+    def lock_center(self):
+        self.center_locked = True
+        self.sigLog.emit(f"Center locked at pixel ({self.current_x_pixel}, {self.current_y_pixel})")
 
     @QtCore.Slot(str)
     def _handle_worker_finished(self, message: str):
